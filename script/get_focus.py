@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 
 import cv2
 import numpy as np
@@ -17,64 +17,77 @@ def main():
                 params.append(float(t))
             except ValueError:
                 pass
-    distance_to_object, object_width, matrix_w, matrix_h = params
+    distance_to_object, object_width, matrix_width, matrix_height = params
     param_file.close()
 
-    print('Расстояние до объекта: {}'.format(str(distance_to_object)))
-    print('Ширина референсного объекта: {}'.format(str(object_width)))
-    time.sleep(1)
+    print('Distance to object: ' + str(distance_to_object))
+    print('Cell width: ' + str(object_width))
 
     try:
-        cap = cv2.VideoCapture(0)
+        cap = cv2.VideoCapture("/dev/video0")
         cap.set(3, 1920)
         cap.set(4, 1080)
     except:
-        raise Exception('Невозможно получить данные от камеры')
+        raise Exception('Can\'t open video0')
 
     while True:
         rtv, frame = cap.read()
+
         frame_half_width = frame.shape[1]//2
         frame_half_height = frame.shape[0]//2
-        print(frame_half_width, frame_half_height)
 
-        canny = cv2.Canny(frame, 100, 100)
+        # frame = frame[frame_half_height-300:frame_half_height+300, frame_half_width-400:frame_half_width+400]
 
-        #Нахождение крайних точек
-        right_point = frame_half_width        
-        while canny[frame_half_height,frame_half_width]==0 and canny[frame_half_height-1,frame_half_width]==0 and canny[frame_half_height+1,frame_half_width]==0:
-            right_point+=1
-            if right_point == frame.shape[1]-1:
+        canny = cv2.Canny(frame, 50, 150, apertureSize = 3)
+
+        right_point = frame_half_width
+        while True:
+            got_edge = (canny[frame_half_height, right_point] + canny[frame_half_height-1, right_point] + canny[frame_half_height+1, right_point]) > 0
+            end_of_frame = (right_point == frame.shape[1]-3)
+
+            if got_edge or end_of_frame:
                 break
+            else:
+                right_point+=1
 
-        cv2.circle(canny, (frame_half_width, frame_half_height), 7, 255, -1)
+        cv2.circle(canny, (right_point, frame_half_height), 7, 255, -1)
+        cv2.circle(frame, (right_point, frame_half_height), 7, (200,100,100), -1)
 
-        p=frame_half_width
-        frame_half_width = canny.shape[1]//2
-        while canny[frame_half_height,frame_half_width]==0 and canny[frame_half_height-1,frame_half_width]==0 and canny[frame_half_height+1,frame_half_width]==0:
-            frame_half_width-=1
-            if frame_half_width == 0:
+
+        left_point = frame_half_width
+        while True:
+            got_edge = (canny[frame_half_height, left_point] + canny[frame_half_height-1, left_point] + canny[frame_half_height+1, left_point]) > 0
+            end_of_frame = (left_point == 2)
+
+            if got_edge or end_of_frame:
                 break
+            else:
+                left_point-=1
 
-        cv2.circle(canny, (frame_half_width, frame_half_height), 7, 255, -1)
-        p-=frame_half_width
-        canny = cv2.resize(canny, (960, 540), interpolation=cv2.INTER_NEAREST)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+        cv2.circle(canny, (left_point, frame_half_height), 7, 255, -1)
+        cv2.circle(frame, (left_point, frame_half_height), 7, (200,100,100), -1)
 
-        #Расчет фокусного расстояния
-        if p<frame.shape[1]-10 and p>10:
-            focus = matrix_w*distance_to_object/(frame.shape[1]*object_width/p)
+        object_width_in_pixel = right_point - left_point
+        if object_width_in_pixel != 0:
+            focus = matrix_width*distance_to_object/(frame.shape[1]/float(right_point - left_point)*object_width)
             cv2.putText(canny, '%4.2f' % focus, (100, 100), cv2.FONT_HERSHEY_SIMPLEX, 2, 255, thickness = 3)
 
+
+
+        canny = cv2.resize(canny, (960, 540), interpolation=cv2.INTER_NEAREST)
         cv2.imshow('canny', canny)
+
         frame = cv2.resize(frame, (960, 540), interpolation=cv2.INTER_NEAREST)
         cv2.imshow('frame', frame)
+
+        if cv2.waitKey(33) == 27:
+            break
 
     cap.release()
     cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    try:
-        main()
-    except Exception as e:
-        print(e)
+    # try:
+    main()
+    # except Exception as e:
+    #     print(e)
