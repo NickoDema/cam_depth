@@ -1,7 +1,6 @@
 #include "ros/ros.h"
 #include "opencv2/opencv.hpp"
 #include <iostream>
-#include <chrono>
 #include "sensor_msgs/Image.h"
 #include "sensor_msgs/CameraInfo.h"
 
@@ -46,8 +45,8 @@ int main(int argc, char **argv){
     ros::init(argc, argv, "video_publisher");
     ros::NodeHandle nh;
 
-    ros::Publisher video0_pub = nh.advertise<sensor_msgs::Image>("video0", 1);
-    ros::Publisher video1_pub = nh.advertise<sensor_msgs::Image>("video1", 1);
+    ros::Publisher video0_pub = nh.advertise<sensor_msgs::Image>("left/image_raw", 1);
+    ros::Publisher video1_pub = nh.advertise<sensor_msgs::Image>("right/image_raw", 1);
 
     ros::Rate loop_rate(30);
     ros::Time time;
@@ -109,6 +108,8 @@ int main(int argc, char **argv){
 
 
 // --------------------------------------------------------------------------
+
+// #include <chrono>
 
     // milliseconds ms_prev = std::chrono::duration_cast< milliseconds >(system_clock::now().time_since_epoch());
 
