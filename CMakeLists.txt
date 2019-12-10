@@ -79,6 +79,10 @@ add_executable( video_cap_2cam src/video_cap_2cam.cpp )
 target_compile_features(video_cap_2cam PRIVATE cxx_range_for)
 target_link_libraries( video_cap_2cam ${OpenCV_LIBS} )
 
+add_executable( video_cap_2cam_undist src/video_cap_2cam_undist.cpp )
+target_compile_features(video_cap_2cam_undist PRIVATE cxx_range_for)
+target_link_libraries( video_cap_2cam_undist ${OpenCV_LIBS} )
+
 add_executable( video_cap_2cam_node src/video_cap_2cam_node.cpp )
 target_compile_features(video_cap_2cam_node PRIVATE cxx_range_for)
 target_link_libraries( video_cap_2cam_node ${OpenCV_LIBS} ${catkin_LIBRARIES} )
