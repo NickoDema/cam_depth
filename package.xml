@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>cam_depth</name>
+  <name>depth_cams</name>
   <version>0.1.0</version>
-  <description>The cam_depth package</description>
+  <description>The depth_cmas package</description>
 
-  <maintainer email="ndema2301@gmail.com">dema</maintainer>
+  <maintainer email="ndema2301@gmail.com">Nikolay Dema</maintainer>
 
   <license>MIT</license>
 

@@ -42,7 +42,7 @@ void convert_frame_to_message(const cv::Mat & frame, std::string frame_id, uint 
 
 int main(int argc, char **argv){
 
-    ros::init(argc, argv, "video_publisher");
+    ros::init(argc, argv, "stereo");
     ros::NodeHandle nh;
 
     ros::Publisher video0_pub = nh.advertise<sensor_msgs::Image>("left/image_raw", 1);

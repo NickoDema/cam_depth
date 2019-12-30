@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(cam_depth)
+project(depth_cams)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -10,11 +10,16 @@ find_package(catkin REQUIRED COMPONENTS
     std_msgs
     sensor_msgs
     tf
+    dynamic_reconfigure
     )
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 find_package(OpenCV 4.1.1 REQUIRED)
+
+generate_dynamic_reconfigure_options(
+  cfg/DepthCams.cfg
+)
 
 ###################################
 ## catkin specific configuration ##
@@ -82,6 +87,11 @@ target_link_libraries( video_cap_2cam ${OpenCV_LIBS} )
 add_executable( video_cap_2cam_undist src/video_cap_2cam_undist.cpp )
 target_compile_features(video_cap_2cam_undist PRIVATE cxx_range_for)
 target_link_libraries( video_cap_2cam_undist ${OpenCV_LIBS} )
+
+add_executable( stereo src/stereo.cpp )
+target_compile_features(stereo PRIVATE cxx_range_for)
+target_link_libraries( stereo ${OpenCV_LIBS} ${catkin_LIBRARIES} )
+add_dependencies(stereo ${PROJECT_NAME}_gencfg)
 
 add_executable( birdeye_view_2cam src/birdeye_view_2cam.cpp )
 target_compile_features(birdeye_view_2cam PRIVATE cxx_range_for)
