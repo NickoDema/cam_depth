@@ -13,25 +13,13 @@ using namespace std::chrono;
 // std::vector<cv::Point3d> Generate3DPoints();
 
 cv::Ptr<cv::StereoSGBM> sgbm;
+int numberOfDisparities;
 
 void dynamic_param_cb(depth_cams::DepthCamsConfig &config, uint32_t level) {
-    ROS_INFO("Reconfigure Request: %d %d %d %d %d %d %d %d %d %d %d",
-             config.min_disparity,
-             config.disparity_num,
-             config.block_size,
-             config.penalty_1,
-             config.penalty_2,
-             config.disp_12_max_diff,
-             config.pre_filter_cap,
-             config.uniqueness_ratio,
-             config.speckle_window_size,
-             config.speckle_range,
-             config.sgbm_mode
-    );
 
     sgbm = cv::StereoSGBM::create(
-      config.min_disparity,
-      config.disparity_num,
+      config.min_disparity * 16,
+      config.disparity_num * 16,
       config.block_size,
       config.penalty_1,
       config.penalty_2,
@@ -42,7 +30,25 @@ void dynamic_param_cb(depth_cams::DepthCamsConfig &config, uint32_t level) {
       config.speckle_range,
       config.sgbm_mode
     );
+    numberOfDisparities = config.disparity_num * 16;
 }
+
+void get_last_frame(cv::VideoCapture& video, cv::Mat& frame)
+{
+    //Get total number of frames in the video
+    //Won't work on live video capture
+    const int frames = video.get(cv::CAP_PROP_FRAME_COUNT);
+
+    //Seek video to last frame
+    video.set(cv::CAP_PROP_POS_FRAMES, frames-1);
+
+    //Capture the last frame
+    video>>frame;
+
+    //Rewind video
+    video.set(cv::CAP_PROP_POS_FRAMES, 0);
+}
+
 
 int main(int argc, char **argv){
 
@@ -58,8 +64,11 @@ int main(int argc, char **argv){
 
   cap_0.set(cv::CAP_PROP_FRAME_WIDTH, static_cast<double>(1920));
   cap_0.set(cv::CAP_PROP_FRAME_HEIGHT, static_cast<double>(1080));
+  cap_0.set(cv::CAP_PROP_BUFFERSIZE, 1);
+
   cap_1.set(cv::CAP_PROP_FRAME_WIDTH, static_cast<double>(1920));
   cap_1.set(cv::CAP_PROP_FRAME_HEIGHT, static_cast<double>(1080));
+  cap_1.set(cv::CAP_PROP_BUFFERSIZE, 1);
 
   cv::Size image_size;
   image_size.height = 1080;
@@ -113,15 +122,13 @@ int main(int argc, char **argv){
 
   cv::Mat left_image, right_image;
 
-  // cv::Ptr<cv::StereoSGBM> sgbm = cv::StereoSGBM::create();
-
   dynamic_reconfigure::Server<depth_cams::DepthCamsConfig> dynamic_param_srv;
   dynamic_reconfigure::Server<depth_cams::DepthCamsConfig>::CallbackType cb_type;
 
   cb_type = boost::bind(&dynamic_param_cb, _1, _2);
   dynamic_param_srv.setCallback(cb_type);
 
-  cv::Size new_size(768,432);
+  cv::Size new_size(1280,720);
 
   cv::Mat pair, disp, vdisp;
   // pair.create( image_size.height, image_size.width*2, CV_8UC3 );
@@ -133,6 +140,9 @@ int main(int argc, char **argv){
     cap_0 >> left_image;
     cap_1 >> right_image;
 
+    // get_last_frame(cap_0, left_image);
+    // get_last_frame(cap_1, right_image);
+
     if( !left_image.empty() ) {
       cv::remap(left_image, left_image, left_undist_map, left_undist_additional_map, cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar());
       // vector<cv::KeyPoint> keypointsD;
@@ -142,6 +152,8 @@ int main(int argc, char **argv){
       // detector->detect(left_image, keypointsD, cv::Mat());
       // drawKeypoints(left_image, keypointsD, left_image);
       cv::resize(left_image, left_image, new_size);
+      cv::namedWindow("undistorted_left", cv::WINDOW_NORMAL);
+      cv::resizeWindow("undistorted_left", 768, 432);
       cv::imshow("undistorted_left", left_image);
     }
 
@@ -153,7 +165,10 @@ int main(int argc, char **argv){
 
     if( !left_image.empty() && !right_image.empty() ) {
         sgbm->compute( left_image, right_image, disp);
-        cv::normalize( disp, vdisp, 0, 250, cv::NORM_MINMAX, CV_8U );
+        // cv::normalize( disp, vdisp, 0, 250, cv::NORM_MINMAX, CV_8U );
+        disp.convertTo(vdisp, CV_8U, 255/(numberOfDisparities*16.));
+        cv::namedWindow("disparity", cv::WINDOW_NORMAL);
+        cv::resizeWindow("disparity", 768, 432);
         cv::imshow( "disparity", vdisp );
     }
 
