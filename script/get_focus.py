@@ -72,9 +72,9 @@ def main():
 
         object_width_in_pixel = right_point - left_point
         if object_width_in_pixel != 0:
-            d = (full_frame_width/float(object_width_in_pixel)*object_width)
-            print(d)
-            focus = matrix_width*distance_to_object/d
+            d = (full_frame_width / float(object_width_in_pixel) * object_width)
+            # print(d)
+            focus = matrix_width * distance_to_object / d
             cv2.putText(canny, '%4.2f' % focus, (100, 100), cv2.FONT_HERSHEY_SIMPLEX, 2, 255, thickness = 3)
 
 
